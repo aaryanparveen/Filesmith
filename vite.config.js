@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import extraVitePlugins from './vite.plugins';
 
 export default defineConfig({
   plugins: [
     react(),
+    ...extraVitePlugins,
     {
       name: 'cross-origin-isolation',
       configureServer(server) {
