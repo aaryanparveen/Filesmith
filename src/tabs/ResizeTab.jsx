@@ -20,6 +20,50 @@ const PRESETS = [
   { label: 'App Icon', w: 512, h: 512 },
 ];
 
+async function resizeWithCanvas(imageData, width, height, outputFormat, quality) {
+  const inputBlob = new Blob([imageData]);
+  const objectUrl = URL.createObjectURL(inputBlob);
+
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('Failed to decode image in canvas fallback'));
+      el.src = objectUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const fmt = String(outputFormat || 'png').toLowerCase();
+    const mimeMap = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      webp: 'image/webp',
+      avif: 'image/avif',
+      gif: 'image/png',
+      tiff: 'image/png',
+    };
+    const mime = mimeMap[fmt] || 'image/png';
+
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error('Canvas export failed'))),
+        mime,
+        Math.max(0.01, Math.min(1, (quality || 85) / 100))
+      );
+    });
+
+    return new Uint8Array(await blob.arrayBuffer());
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export default function ResizeTab() {
   const [files, setFiles] = useState([]);
   const [width, setWidth] = useState(800);
@@ -182,10 +226,20 @@ export default function ResizeTab() {
         }
 
         addLog(`  Resizing to ${width}x${height}...`);
-        const resized = await resizeImage(data, width, height, {
-          format: `.${outputFormat}`,
-          params: outputFormat === 'jpg' || outputFormat === 'jpeg' ? { Q: quality } : outputFormat === 'webp' ? { Q: quality } : {},
-        });
+        let resized;
+        try {
+          resized = await resizeImage(data, width, height, {
+            format: `.${outputFormat}`,
+            params: outputFormat === 'jpg' || outputFormat === 'jpeg' ? { Q: quality } : outputFormat === 'webp' ? { Q: quality } : {},
+          });
+        } catch (resizeErr) {
+          const msg = String(resizeErr && resizeErr.message ? resizeErr.message : resizeErr);
+          const vipsMemoryIssue = msg.includes('Failed to load wasm-vips') || msg.includes('WebAssembly.Memory');
+          if (!vipsMemoryIssue) throw resizeErr;
+
+          addLog('  wasm-vips memory allocation failed, using canvas fallback...');
+          resized = await resizeWithCanvas(data, width, height, outputFormat, quality);
+        }
 
         const baseName = file.name.replace(/\.[^.]+$/, '');
         const blob = new Blob([resized], { type: 'application/octet-stream' });
