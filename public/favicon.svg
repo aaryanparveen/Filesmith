@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Filesmith pencil logo">
+  <path d="M10 32 C10 18 20 10 34 10 C45 10 54 18 54 29 C54 43 44 54 30 54 C17 54 10 45 10 32 Z" fill="#fff9c4" stroke="#2d2d2d" stroke-width="4" stroke-linejoin="round"/>
+  <g transform="translate(10 10) rotate(-10 22 22)">
+    <path d="M38.174 18.812a1 1 0 0 0-3.986-3.987L20.842 28.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" fill="none" stroke="#2d2d2d" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m32 17 4 4" fill="none" stroke="#2d2d2d" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
