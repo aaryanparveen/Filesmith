@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
@@ -20,7 +21,9 @@
     "wasm-vips": "^0.0.11"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.30.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "wrangler": "^4.76.0"
   }
 }
