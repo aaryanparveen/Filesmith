@@ -8,9 +8,7 @@ import { optimizeSVG } from '../engines/svgoEngine';
 
 const VIDEO_CODECS = [
   { value: 'libx264', label: 'H.264 (widely compatible)' },
-  { value: 'libx265', label: 'H.265/HEVC (better compression)' },
   { value: 'libvpx-vp9', label: 'VP9 (WebM, great for web)' },
-  { value: 'libaom-av1', label: 'AV1 (best compression, slow)' },
 ];
 
 const AUDIO_CODECS = [
@@ -103,11 +101,22 @@ export default function CompressTab() {
         addLog('SVG optimized');
       } else if (category === 'video') {
         const crf = Math.max(1, Math.min(51, Math.round(51 - (quality / 100) * 50)));
-        const outExt = videoCodec === 'libvpx-vp9' ? 'webm' : (videoCodec === 'libaom-av1' ? 'mp4' : ext);
+        const outExt = videoCodec === 'libvpx-vp9' ? 'webm' : ext;
         const inName = `input.${ext}`;
         const oName = `output.${outExt}`;
 
-        const args = ['-i', inName, '-c:v', videoCodec, '-crf', String(crf), '-preset', 'fast'];
+        const args = ['-i', inName, '-c:v', videoCodec, '-crf', String(crf)];
+        if (videoCodec === 'libx264') {
+          args.push('-preset', 'fast');
+        } else if (videoCodec === 'libvpx-vp9') {
+          args.push('-b:v', '0'); 
+        }
+        // audio codec must match container
+        if (outExt === 'webm') {
+          args.push('-c:a', 'libopus', '-b:a', `${audioBitrate}k`);
+        } else {
+          args.push('-c:a', 'aac', '-b:a', `${audioBitrate}k`);
+        }
         if (preserveMeta) args.push('-map_metadata', '0');
         else args.push('-map_metadata', '-1');
         args.push(oName);
@@ -118,16 +127,21 @@ export default function CompressTab() {
         outName = `compressed.${outExt}`;
       } else if (category === 'audio') {
         const inName = `input.${ext}`;
-        const codecToExt = { 'libmp3lame': 'mp3', 'aac': 'm4a', 'libopus': 'opus', 'libvorbis': 'ogg', 'flac': 'flac' };
+        const codecToExt = { 'libmp3lame': 'mp3', 'aac': 'm4a', 'libopus': 'ogg', 'libvorbis': 'ogg', 'flac': 'flac' };
         const outExt = codecToExt[audioCodec] || ext;
         const oName = `output.${outExt}`;
 
-        const args = ['-i', inName, '-c:a', audioCodec, '-b:a', `${audioBitrate}k`, '-ar', sampleRate];
+        const args = ['-i', inName, '-c:a', audioCodec];
+     
+        if (audioCodec !== 'flac') {
+          args.push('-b:a', `${audioBitrate}k`);
+        }
+        args.push('-ar', sampleRate);
         if (preserveMeta) args.push('-map_metadata', '0');
         else args.push('-map_metadata', '-1');
         args.push(oName);
 
-        addLog(`Re-encoding audio: ${audioCodec}, ${audioBitrate}kbps, ${sampleRate}Hz...`);
+        addLog(`Re-encoding audio: ${audioCodec}, ${audioCodec === 'flac' ? 'lossless' : audioBitrate + 'kbps'}, ${sampleRate}Hz...`);
         addLog(`   Command: ffmpeg ${args.join(' ')}`);
         blob = await execFFmpeg(args, file, inName, oName, addLog);
         outName = `compressed.${outExt}`;
