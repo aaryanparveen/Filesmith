@@ -8,7 +8,7 @@ export async function loadMagick() {
   if (loadPromise) { await loadPromise; return; }
 
   loadPromise = (async () => {
-    const res = await fetch('/magick.wasm');
+    const res = await fetch('https://cdn.jsdelivr.net/npm/@imagemagick/magick-wasm@0.0.39/dist/magick.wasm');
     const wasmBytes = new Uint8Array(await res.arrayBuffer());
     await initializeImageMagick(wasmBytes);
     initialized = true;
