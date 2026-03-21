@@ -40,9 +40,16 @@ export function readFileAsText(file) {
 }
 
 export const IMAGE_FORMATS = [
-  'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'ico', 'tiff', 'tif', 'avif', 'svg',
-  'tga', 'ppm', 'pgm', 'pbm', 'pnm', 'hdr', 'exr', 'psd', 'jfif', 'jpe',
+  'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'ico', 'tiff', 'tif', 'avif', 'svg', 'svgz',
+  'tga', 'ppm', 'pgm', 'pbm', 'pnm', 'hdr', 'exr', 'psd', 'psb', 'jfif', 'jpe', 'pjpeg',
   'pcx', 'qoi', 'dds', 'dpx', 'fits', 'pam', 'xbm', 'xpm',
+  'j2k', 'jp2', 'jpc', 'j2c', 'jpm', 'jps', 'jxl', 'jng',
+  'pdf', 'eps', 'ai',
+  'cur', 'icb', 'vda', 'vst', 'palm', 'pcd', 'sgi', 'wbmp', 'wpg', 'mng',
+  'cin', 'dcx', 'farbfeld', 'ff', 'ptif', 'ras', 'sun', 'pct', 'pict', 'picon',
+  'art', 'avs', 'bmp2', 'bmp3', 'dxt1', 'dxt5', 'gif87',
+  'png8', 'png24', 'png32', 'png48', 'png64',
+  'tiff64', 'vips',
 ];
 
 export const AUDIO_FORMATS = [

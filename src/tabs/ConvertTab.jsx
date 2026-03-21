@@ -8,10 +8,18 @@ import { convertWithMagick } from '../engines/magickEngine';
 import { convertWithFFmpeg } from '../engines/ffmpegEngine';
 
 const ALL_TARGETS = {
-  image: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'ico', 'tiff', 'tif', 'avif', 'svg', 'tga',
-    'ppm', 'pgm', 'pbm', 'pnm', 'hdr', 'exr', 'psd', 'jfif', 'jpe', 'pcx', 'qoi', 'dds',
-    'dpx', 'fits', 'pam', 'xbm', 'xpm', 'j2k', 'jp2', 'jng', 'mng', 'palm', 'pcd',
-    'sgi', 'wbmp', 'wpg', 'icb', 'vda', 'vst'],
+  image: [
+    'png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'ico', 'tiff', 'tif', 'avif', 'svg', 'svgz',
+    'tga', 'ppm', 'pgm', 'pbm', 'pnm', 'hdr', 'exr', 'psd', 'psb', 'jpe', 'pjpeg',
+    'pcx', 'qoi', 'dds', 'dpx', 'fits', 'pam', 'xbm', 'xpm',
+    'j2k', 'jp2', 'jpc', 'j2c', 'jpm', 'jps', 'jxl', 'jng',
+    'pdf', 'eps', 'ai',
+    'cur', 'icb', 'vda', 'vst', 'palm', 'pcd', 'sgi', 'wbmp', 'wpg', 'mng',
+    'cin', 'dcx', 'farbfeld', 'ff', 'ptif', 'ras', 'sun', 'pct', 'pict', 'picon',
+    'art', 'avs', 'bmp2', 'bmp3', 'dxt1', 'dxt5', 'gif87',
+    'png8', 'png24', 'png32', 'png48', 'png64',
+    'tiff64', 'vips',
+  ],
   audio: ['mp3', 'wav', 'flac', 'ogg', 'opus', 'aac', 'm4a', 'wma', 'amr', 'ac3',
     'aiff', 'aif', 'au', 'weba', 'mp2', 'voc'],
   video: ['mp4', 'webm', 'mkv', 'avi', 'mov', 'wmv', 'gif', 'mpg', 'mpeg', 'flv',
