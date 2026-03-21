@@ -4,7 +4,7 @@ import FileDropZone from '../components/FileDropZone';
 import { execFFmpeg } from '../engines/ffmpegEngine';
 import { FFMPEG_PRESETS, getFileExtension, downloadBlob, formatFileSize } from '../utils';
 
-const NVIDIA_NIM_URL = '/api/nvidia/v1/chat/completions';
+const NVIDIA_NIM_URL = '/ai';
 
 export default function FFmpegTab() {
   const [file, setFile] = useState(null);

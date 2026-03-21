@@ -12,7 +12,6 @@ export async function onRequestPost(context) {
   });
 
   const text = await res.text();
-
   return new Response(text, {
     status: res.status,
     headers: {

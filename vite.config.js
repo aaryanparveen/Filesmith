@@ -26,10 +26,10 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'credentialless',
     },
     proxy: {
-      '/api/nvidia': {
+      '/ai': {
         target: 'https://integrate.api.nvidia.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/nvidia/, ''),
+        rewrite: () => '/v1/chat/completions',
       },
     },
   },
