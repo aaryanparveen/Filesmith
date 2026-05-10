@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { ArrowRightLeft, Download, Loader, Search } from 'lucide-react';
 import FileDropZone from '../components/FileDropZone';
-import { getFileExtension, downloadBlob, readFileAsArrayBuffer, detectFileCategory,
-  IMAGE_FORMATS, AUDIO_FORMATS, VIDEO_FORMATS } from '../utils';
+import {
+  getFileExtension, downloadBlob, readFileAsArrayBuffer, detectFileCategory,
+  IMAGE_FORMATS, AUDIO_FORMATS, VIDEO_FORMATS
+} from '../utils';
 import { convertImage } from '../engines/vipsEngine';
 import { convertWithMagick } from '../engines/magickEngine';
 import { convertWithFFmpeg } from '../engines/ffmpegEngine';
@@ -27,14 +29,14 @@ const ALL_TARGETS = {
 };
 
 export default function ConvertTab() {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [targetFormat, setTargetFormat] = useState('');
   const [search, setSearch] = useState('');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [log, setLog] = useState('');
 
-  const sourceExt = file ? getFileExtension(file.name) : '';
+  const sourceExt = files.length > 0 ? getFileExtension(files[0].name) : '';
   const category = sourceExt ? detectFileCategory(sourceExt) : '';
 
   const targetFormats = useMemo(() => {
@@ -49,42 +51,90 @@ export default function ConvertTab() {
   }, [targetFormats, search]);
 
   const convert = async () => {
-    if (!file || !targetFormat) return;
+    if (files.length === 0 || !targetFormat) return;
     setProcessing(true);
     setResult(null);
     setLog('');
     const addLog = (msg) => setLog(prev => prev + msg + '\n');
 
     try {
-      let blob;
-      const baseName = file.name.replace(/\.[^.]+$/, '');
+      if (files.length === 1) {
+        let blob;
+        const file = files[0];
+        const baseName = file.name.replace(/\.[^.]+$/, '');
 
-      if (category === 'image') {
-        addLog(`Converting ${sourceExt} to ${targetFormat}...`);
+        if (category === 'image') {
+          addLog(`Converting ${sourceExt} to ${targetFormat}...`);
 
-        try {
-          const buf = await readFileAsArrayBuffer(file);
-          const converted = await convertImage(new Uint8Array(buf), `.${targetFormat}`);
-          blob = new Blob([converted], { type: 'application/octet-stream' });
-          addLog('Converted via wasm-vips');
-        } catch (vipsErr) {
-          addLog(`vips failed (${vipsErr.message}), trying ImageMagick...`);
-          const buf = await readFileAsArrayBuffer(file);
-          const converted = await convertWithMagick(new Uint8Array(buf), sourceExt, targetFormat);
-          blob = new Blob([converted], { type: 'application/octet-stream' });
-          addLog('Converted via ImageMagick WASM');
+          try {
+            const buf = await readFileAsArrayBuffer(file);
+            const converted = await convertImage(new Uint8Array(buf), `.${targetFormat}`);
+            blob = new Blob([converted], { type: 'application/octet-stream' });
+            addLog('Converted via wasm-vips');
+          } catch (vipsErr) {
+            addLog(`vips failed (${vipsErr.message}), trying ImageMagick...`);
+            const buf = await readFileAsArrayBuffer(file);
+            const converted = await convertWithMagick(new Uint8Array(buf), sourceExt, targetFormat);
+            blob = new Blob([converted], { type: 'application/octet-stream' });
+            addLog('Converted via ImageMagick WASM');
+          }
+        } else if (category === 'audio' || category === 'video') {
+          addLog(`Converting ${sourceExt} to ${targetFormat} via FFmpeg...`);
+          blob = await convertWithFFmpeg(file, targetFormat, addLog);
+          addLog('Converted via FFmpeg WASM');
+        } else {
+          addLog(`Attempting conversion ${sourceExt} to ${targetFormat}...`);
+          blob = await convertWithFFmpeg(file, targetFormat, addLog);
         }
-      } else if (category === 'audio' || category === 'video') {
-        addLog(`Converting ${sourceExt} to ${targetFormat} via FFmpeg...`);
-        blob = await convertWithFFmpeg(file, targetFormat, addLog);
-        addLog('Converted via FFmpeg WASM');
-      } else {
-        addLog(`Attempting conversion ${sourceExt} to ${targetFormat}...`);
-        blob = await convertWithFFmpeg(file, targetFormat, addLog);
-      }
 
-      setResult({ blob, name: `${baseName}.${targetFormat}` });
-      addLog(`\nDone!`);
+        setResult({ blob, name: `${baseName}.${targetFormat}` });
+        addLog(`\nDone!`);
+      } else {
+        const JSZip = (await import('jszip')).default;
+        const zip = new JSZip();
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const baseName = file.name.replace(/\.[^.]+$/, '');
+          const fileExt = getFileExtension(file.name);
+          const fileCategory = detectFileCategory(fileExt);
+
+          addLog(`Converting ${file.name} to ${targetFormat}...`);
+
+          try {
+            let blob;
+            if (fileCategory === 'image') {
+              try {
+                const buf = await readFileAsArrayBuffer(file);
+                const converted = await convertImage(new Uint8Array(buf), `.${targetFormat}`);
+                blob = new Blob([converted], { type: 'application/octet-stream' });
+                addLog(`  Converted via wasm-vips`);
+              } catch (vipsErr) {
+                addLog(`  vips failed (${vipsErr.message}), trying ImageMagick...`);
+                const buf = await readFileAsArrayBuffer(file);
+                const converted = await convertWithMagick(new Uint8Array(buf), fileExt, targetFormat);
+                blob = new Blob([converted], { type: 'application/octet-stream' });
+                addLog(`  Converted via ImageMagick WASM`);
+              }
+            } else if (fileCategory === 'audio' || fileCategory === 'video') {
+              blob = await convertWithFFmpeg(file, targetFormat, addLog);
+              addLog(`  Converted via FFmpeg WASM`);
+            } else {
+              blob = await convertWithFFmpeg(file, targetFormat, addLog);
+              addLog(`  Converted via FFmpeg WASM`);
+            }
+
+            zip.file(`${baseName}.${targetFormat}`, blob);
+          } catch (fileErr) {
+            addLog(`  Error converting ${file.name}: ${fileErr.message}`);
+          }
+        }
+
+        addLog(`\nGenerating ZIP archive with ${files.length} files...`);
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        setResult({ blob: zipBlob, name: 'filesmith.zip', isZip: true });
+        addLog('Done!');
+      }
     } catch (e) {
       addLog(`Error: ${e.message}`);
     }
@@ -110,10 +160,11 @@ export default function ConvertTab() {
       </div>
 
       <FileDropZone
-        onFiles={(f) => { setFile(f[0] || null); setResult(null); setLog(''); setTargetFormat(''); }}
+        multiple={true}
+        onFiles={(f) => { setFiles(f); setResult(null); setLog(''); setTargetFormat(''); }}
       />
 
-      {file && (
+      {files.length > 0 && (
         <>
           <div className="card" style={{ borderRadius: 'var(--wobbly)' }}>
             <div className="flex items-center gap-3" style={{ marginBottom: 16 }}>
@@ -121,7 +172,7 @@ export default function ConvertTab() {
                 .{sourceExt}
               </span>
               <ArrowRightLeft size={20} />
-              <span className="badge" style={{ 
+              <span className="badge" style={{
                 fontSize: '1rem', transform: 'none',
                 background: targetFormat ? 'var(--blue)' : 'var(--muted)',
                 color: targetFormat ? 'white' : 'var(--pencil)',
@@ -172,7 +223,7 @@ export default function ConvertTab() {
       {result && (
         <div className="result-bar">
           <div className="result-info">
-            Converted to .{targetFormat}
+            {result.isZip ? `Converted ${files.length} files to .${targetFormat}` : `Converted to .${targetFormat}`}
           </div>
           <button className="btn btn-accent" onClick={() => downloadBlob(result.blob, result.name)}>
             <Download size={18} /> Download {result.name}
