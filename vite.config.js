@@ -2,21 +2,19 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import extraVitePlugins from './vite.plugins';
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 export default defineConfig({
-  plugins: [
-    react(),
-    ...extraVitePlugins,
-    {
-      name: 'cross-origin-isolation',
-      configureServer(server) {
-        server.middlewares.use((_req, res, next) => {
-          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-          res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
-          next();
-        });
-      },
+  plugins: [react(), ...extraVitePlugins, {
+    name: 'cross-origin-isolation',
+    configureServer(server) {
+      server.middlewares.use((_req, res, next) => {
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+        next();
+      });
     },
-  ],
+  }, cloudflare()],
   optimizeDeps: {
     exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', 'wasm-vips'],
   },
